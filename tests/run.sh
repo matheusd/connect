@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
-# This script allows you to run Connect tests locally. It spins up trezor-user-env
-# which the tests need to launch emulator and other things. Gitlab does not run
-# this script, because the tests run inside the trezor-user-env docker container
-# directly.
+# This script helps you to run trezor-connect tests locally.
+# It sets up trezor-user-env and required evironment variables
 
 set -e
 
@@ -17,9 +15,10 @@ function cleanup() {
 
 trap cleanup EXIT
 
-run() {
+function runDocker() {
   # fetch latest image, can be commented out if you do not need latest master
   echo "Pulling latest trezor-user-env"
+  
   docker pull registry.gitlab.com/satoshilabs/trezor/trezor-user-env/trezor-user-env
 
   if [ $GUI = false ]; then
@@ -32,8 +31,7 @@ run() {
         registry.gitlab.com/satoshilabs/trezor/trezor-user-env/trezor-user-env \
         "/trezor-user-env/run.sh"
     )
-    echo "Running docker container with an ID:"
-    echo "$id"
+    echo "Running docker container with an ID $id"
 
   else
     xhost +
@@ -48,46 +46,71 @@ run() {
         "/trezor-user-env/run.sh"
     )
 
-    echo "Running docker container with a GUI support with ID:"
-    echo "$id"
+    echo "Running docker container with a GUI support with ID: $id"
   fi
+}
 
+function waitForEnv() {
   echo "Waiting for the trezor-user-env to load up"
+  i=0
   while ! netstat -tna | grep 'LISTEN\>' | grep -q ':9001\>'; do
-    echo "Waiting"
+    if [ $i -gt 10 ]; then
+      echo "trezor-user-env is not running. exiting"
+      exit 1
+    fi
+    echo "Waiting..."
+    ((i=i+1))
     sleep 1
   done
   echo "trezor-user-env loaded up"
+}
 
-  echo "Running yarn"
-  yarn jest --config jest.config.integration.js --verbose --detectOpenHandles --forceExit --coverage $COVERAGE
+run() {
+  if [ $DOCKER = true ]; then
+    runDocker
+  fi
+
+  waitForEnv
+
+  echo "Running ${TEST_SCRIPT}"
+  echo "    Firmware: ${FIRMWARE}"
+  echo "    Included methods: ${INCLUDED_METHODS}"
+  echo "    Excluded methods: ${EXCLUDED_METHODS}"
+
+  # run actual test script
+  ${TEST_SCRIPT}
 }
 
 show_usage() {
   echo "Usage: run [OPTIONS] [ARGS]"
   echo ""
   echo "Options:"
-  echo "  -g       Run tests with emulator graphical output"
-  echo "  -f       Use specific firmware version, for example: 2.1.4., 2.3.0"
-  echo "  -i       Included methods only, for example: applySettings,signTransaction"
-  echo "  -e       All methods except excluded, for example: applySettings,signTransaction"
-  echo "  -c       Collect coverage"
+  echo "  -d       Disable docker. Useful when running own instance of trezor-user-env"
+  echo "  -g       Enables docker tests with emulator graphical output"
+  echo "  -f       Use specific firmware version, example: 2.1.4., 1.8.0. default: 2-master"
+  echo "  -i       Included methods only, example: applySettings,signTransaction"
+  echo "  -e       All methods except excluded, example: applySettings,signTransaction"
+  echo "  -s       actual test script. default: 'yarn test:integration'"
 }
 
 FIRMWARE='2-master'
 INCLUDED_METHODS=''
 EXCLUDED_METHODS=''
+DOCKER=true
 GUI=false
-COVERAGE=false
+TEST_SCRIPT='yarn test:integration'
 
 OPTIND=1
-while getopts ":i:e:f:hgc" opt; do
+while getopts ":i:e:f:s:hdg" opt; do
   case $opt in
-  c)
-    COVERAGE=true
+  d)
+    DOCKER=false
     ;;
   g)
     GUI=true
+    ;;
+  s)
+    TEST_SCRIPT=$OPTARG
     ;;
   f)
     FIRMWARE=$OPTARG
