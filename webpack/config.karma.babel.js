@@ -1,8 +1,8 @@
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
 import webpack from 'webpack';
-import { SRC, JS_SRC } from './constants';
+import { JS_SRC } from './constants';
 
-// used in legacy tests
+// used in karma tests
 
 module.exports = {
     cache: true,
@@ -76,10 +76,6 @@ module.exports = {
 
     resolve: {
         modules: [JS_SRC, 'node_modules'],
-        alias: {
-            'flowtype/tests/get-address': `${SRC}/flowtype/tests/get-address.js`,
-            'flowtype/tests/sign-message': `${SRC}/flowtype/tests/sign-message.js`,
-        },
         fallback: {
             fs: false, // ignore "fs" import in fastxpub (hd-wallet)
             path: false, // ignore "path" import in protobufjs-old-fixed-webpack (dependency of trezor-link)
@@ -106,9 +102,18 @@ module.exports = {
             /env\/node\/networkUtils$/,
             '../env/browser/networkUtils',
         ),
+
+        new webpack.NormalModuleReplacementPlugin(/ws$/, '@trezor/blockchain-link/lib/utils/ws'),
         new MiniCssExtractPlugin({
             filename: '[name].css',
             chunkFilename: '[id].css',
+        }),
+
+        new webpack.DefinePlugin({
+            'process.env.TESTS_FIRMWARE': JSON.stringify(process.env.TESTS_FIRMWARE),
+            'process.env.TESTS_INCLUDED_METHODS': JSON.stringify(
+                process.env.TESTS_INCLUDED_METHODS,
+            ),
         }),
     ],
 };

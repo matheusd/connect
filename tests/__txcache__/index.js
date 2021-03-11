@@ -1,7 +1,8 @@
 const fs = require('fs');
 const path = require('path');
 
-const CACHE = {};
+export const CACHE = {};
+
 const cacheFiles = dir => {
     const dirFiles = fs.readdirSync(dir);
     dirFiles.forEach(file => {
@@ -12,6 +13,9 @@ const cacheFiles = dir => {
             const rawJson = fs.readFileSync(filePath);
             const content = JSON.parse(rawJson);
             const key = file.substr(0, 6);
+            if (CACHE[key]) {
+                throw new Error(`tx cache duplicate: ${key}`);
+            }
             CACHE[key] = {
                 ...content,
                 hash: file.split('.')[0],
@@ -20,9 +24,6 @@ const cacheFiles = dir => {
     });
 };
 
-export const TX_CACHE = hash => {
-    if (Object.keys(CACHE) < 1) {
-        cacheFiles(path.resolve(__dirname));
-    }
-    return CACHE[hash];
-};
+cacheFiles(path.resolve(__dirname));
+
+export const TX_CACHE = hash => CACHE[hash];

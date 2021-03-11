@@ -6,6 +6,11 @@ const [major, minor, patch] = process.env.TESTS_FIRMWARE.split('.');
 const customFirmwareBuild =
     process.env.TESTS_CUSTOM_FIRMWARE_BUILD || process.env.TESTS_FIRMWARE.indexOf('master') > 0;
 
+// jasmine (karma) workaround
+if (typeof jasmine !== 'undefined' && typeof expect.any !== 'function') {
+    expect.any = jasmine.any;
+}
+
 export default {
     method: 'getFeatures',
     setup: {
