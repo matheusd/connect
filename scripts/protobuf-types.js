@@ -22,7 +22,7 @@ const FIELD_TYPES = {
 const types = []; // { type: 'enum | message', name: string, value: string[], exact?: boolean };
 
 // enums used as keys (string), used as values (number) by default
-const ENUM_KEYS = ['InputScriptType', 'OutputScriptType', 'RequestType', 'BackupType', 'Capability'];
+const ENUM_KEYS = ['InputScriptType', 'OutputScriptType', 'RequestType', 'BackupType', 'Capability', 'SafetyCheckLevel'];
 
 const parseEnumTypescript = item => {
     const value = [];
