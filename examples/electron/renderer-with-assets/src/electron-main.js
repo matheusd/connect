@@ -1,15 +1,25 @@
-const { app, session, BrowserWindow } = require('electron');
+const { app, session, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const url = require('url');
 const isDev = require('electron-is-dev');
 
 let mainWindow;
 
+ipcMain.handle("get-firmware", () => {
+    const fs = require('fs');
+    const file = fs.readFileSync("/home/matheusd/Downloads/trezor-193-capped.bin");  //"/home/matheusd/Downloads/trezor-1.9.3.bin");
+    return Buffer.from(file).toString("hex");
+});
+
 function init() {
     // create browser window
     mainWindow = new BrowserWindow({
         width: 1024,
         height: 775,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+        }
     });
 
     const rendererSrc = isDev

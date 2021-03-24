@@ -6,6 +6,7 @@ import TrezorConnect, {
     TRANSPORT,
     DEVICE,
 } from 'trezor-connect';
+import { ipcRenderer } from "electron";
 
 // print log helper
 const printLog = data => {
@@ -101,7 +102,7 @@ TrezorConnect.init({
     connectSrc: './assets/trezor-connect/',
     popup: false, // render your own UI
     webusb: false, // webusb is not supported in electron
-    debug: false, // see what's going on inside connect
+    debug: true, // see what's going on inside connect
     // lazyLoad: true, // set to "false" (default) if you want to start communication with bridge on application start (and detect connected device right away)
     // set it to "true", then trezor-connect will not be initialized until you call some TrezorConnect.method()
     // this is useful when you don't know if you are dealing with Trezor user
@@ -127,3 +128,11 @@ btn.onclick = () => {
         printLog(response);
     });
 };
+
+const btn2 = document.getElementById("upload")
+btn2.onclick = async () => {
+    const binary = await ipcRenderer.invoke("get-firmware");
+    console.log("got firmware", binary);
+    await TrezorConnect.firmwareUpdate({ binary });
+    console.log("updated firmware")
+}

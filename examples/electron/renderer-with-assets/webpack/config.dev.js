@@ -2,6 +2,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
     watch: true,
+    target: "electron-renderer",
     mode: 'development',
     devtool: 'inline-source-map',
     devServer: {
